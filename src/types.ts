@@ -3,11 +3,11 @@ export interface Entity {
   name: string;
   type: string;
   domain: string;
-  metadata?: string;
+  metadata?: any;
 }
 
 export interface Relationship {
-  id: number;
+  id: string;
   source_id: string;
   target_id: string;
   type: string;
@@ -17,7 +17,7 @@ export interface Relationship {
 }
 
 export interface Feed {
-  id: number;
+  id: string;
   content: string;
   domain: string;
   source_url?: string;

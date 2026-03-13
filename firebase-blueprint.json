@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "Entity": {
+      "title": "Entity",
+      "description": "A node in the strategic intelligence graph",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "name": { "type": "string", "description": "Display name" },
+        "type": { "type": "string", "description": "Type of entity (e.g., Country, Organization)" },
+        "domain": { "type": "string", "description": "Strategic domain" },
+        "metadata": { "type": "object", "description": "Additional data" }
+      },
+      "required": ["id", "name", "domain"]
+    },
+    "Relationship": {
+      "title": "Relationship",
+      "description": "A link between two entities",
+      "type": "object",
+      "properties": {
+        "source_id": { "type": "string", "description": "Source entity ID" },
+        "target_id": { "type": "string", "description": "Target entity ID" },
+        "type": { "type": "string", "description": "Type of relationship" },
+        "description": { "type": "string", "description": "Description of the link" },
+        "strength": { "type": "number", "description": "Strength of the connection" }
+      },
+      "required": ["source_id", "target_id", "type"]
+    },
+    "Feed": {
+      "title": "Feed",
+      "description": "Raw intelligence input",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string", "description": "Raw text content" },
+        "domain": { "type": "string", "description": "Domain of the feed" },
+        "source_url": { "type": "string", "description": "Original source URL" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When it was ingested" }
+      },
+      "required": ["content", "domain", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/entities/{entityId}": {
+      "schema": "Entity",
+      "description": "Global strategic entities"
+    },
+    "/relationships/{relId}": {
+      "schema": "Relationship",
+      "description": "Strategic relationships"
+    },
+    "/feeds/{feedId}": {
+      "schema": "Feed",
+      "description": "Intelligence feed history"
+    }
+  }
+}

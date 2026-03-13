@@ -1,0 +1,111 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: entities
+// Document ID: {entityId} (usually lowercase string)
+// Fields:
+//   - id: string (required) - Unique identifier
+//   - name: string (required) - Display name
+//   - type: string (optional) - Type of entity
+//   - domain: string (required) - Strategic domain
+//   - metadata: map (optional) - Additional data
+//
+// Collection: relationships
+// Document ID: {relId} (auto-generated)
+// Fields:
+//   - source_id: string (required) - Source entity ID
+//   - target_id: string (required) - Target entity ID
+//   - type: string (required) - Type of relationship
+//   - description: string (optional) - Description
+//   - strength: number (optional) - Strength of connection
+//
+// Collection: feeds
+// Document ID: {feedId} (auto-generated)
+// Fields:
+//   - content: string (required) - Raw text
+//   - domain: string (required) - Domain
+//   - source_url: string (optional) - Source URL
+//   - timestamp: string (required) - ISO 8601 timestamp
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "kushdwivediKD@gmail.com")
+        );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEntity(data) {
+      return hasRequiredFields(['id', 'name', 'domain']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.domain is string;
+    }
+
+    function isValidRelationship(data) {
+      return hasRequiredFields(['source_id', 'target_id', 'type']) &&
+             data.source_id is string && data.target_id is string &&
+             data.type is string;
+    }
+
+    function isValidFeed(data) {
+      return hasRequiredFields(['content', 'domain', 'timestamp']) &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.domain is string &&
+             data.timestamp is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /entities/{entityId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidEntity(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /relationships/{relId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidRelationship(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /feeds/{feedId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFeed(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId && 
+        (request.resource.data.role == 'user' || request.auth.token.email == "kushdwivediKD@gmail.com");
+      allow update: if isAdmin();
+    }
+  }
+}
